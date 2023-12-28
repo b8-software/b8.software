@@ -1,0 +1,6 @@
+version: STSv1
+mode: enforce
+max_age: 2419200
+mx: route1.mx.cloudflare.net
+mx: route2.mx.cloudflare.net
+mx: route3.mx.cloudflare.net
