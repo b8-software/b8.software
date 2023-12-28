@@ -10,27 +10,29 @@ const config: Config = {
     extend: {
       backgroundImage: {
         "striped-black":
-          "repeating-linear-gradient(-45deg, #000, #000 1rem, transparent 1rem, transparent 2rem)",
+          "repeating-linear-gradient(-45deg, #000, #000 1.41421356237rem, transparent 1.41421356237rem, transparent 2.82842712474rem)",
       },
       animation: {
-        tape: "tape 5s infinite linear",
+        tape: "tape 6s infinite linear",
       },
       keyframes: {
         tape: {
           "0%": {
             transform:
-              "translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))",
-            "--tw-translate-x": "0px",
+              "translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) translate(18rem, 0px)",
           },
           "100%": {
             transform:
-              "translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))",
-            "--tw-translate-x": "-20%",
+              "translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) translate(-18rem, 0px)",
           },
         },
+      },
+      rotate: {
+        35: "35deg",
       },
     },
   },
   plugins: [],
 };
+
 export default config;
