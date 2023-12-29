@@ -16,7 +16,7 @@ export default function B8Dark({
         clipRule: "evenodd",
         strokeLinejoin: "round",
         strokeMiterlimit: 2,
-        "--stroke-hightlight-length": lineLength,
+        "--stroke-highlight-length": lineLength,
       }}
       width={"100%"}
       height={"100%"}

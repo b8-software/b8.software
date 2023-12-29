@@ -20,8 +20,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         }
       >
         {children}
-        <footer className="snap-end flex items-center w-full justify-center gap-2 p-4">
-          <div className="overflow-clip rounded-full">
+        <footer className="snap-end flex items-center w-full justify-center gap-2 p-6 overflow-hidden">
+          <div className="overflow-clip rounded-full shrink-0">
             <Image
               src="https://avatars.githubusercontent.com/u/71148001?v=4"
               width={48}
@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <a
             href="https://discordapp.com/users/634832620521259008"
-            className="w-12 h-12 p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+            className="w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0"
             title="discord"
           >
             <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -45,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </a>
           <a
             href="https://bento.me/oxymoron"
-            className="w-12 h-12 p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+            className="w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0"
             title="bento"
           >
             <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </a>
           <a
             href="https://github.com/blxckOxymoron"
-            className="w-12 h-12 p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+            className="w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0"
             title="github"
           >
             <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -65,7 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </a>
           <a
             href="mailto:hello@b8.software"
-            className="w-12 h-12 p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+            className="w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0"
             title="mail"
           >
             <svg

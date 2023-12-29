@@ -2,7 +2,7 @@ import B8Dark from "./B8Dark";
 import B8Light from "./B8Light";
 
 export const lineCount = 2;
-export const lineLength = 300;
+export const lineLength = 500;
 
 export default function B8({
   variant = "auto",
