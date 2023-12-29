@@ -5,3 +5,11 @@
 body {
   background-color: black;
 }
+
+@layer utilities {
+  .stroke-dash-highlight {
+    stroke-dasharray: 300 var(--stroke-space-length, 100);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
