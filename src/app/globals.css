@@ -8,7 +8,7 @@ body {
 
 @layer utilities {
   .stroke-dash-highlight {
-    stroke-dasharray: 300 var(--stroke-space-length, 100);
+    stroke-dasharray: var(--stroke-highlight-length, 300) var(--stroke-space-length, 100);
     stroke-linecap: round;
     stroke-linejoin: round;
   }
