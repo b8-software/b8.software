@@ -1,3 +1,4 @@
+import Boids from "./Boids";
 import Tape from "./Tape";
 import B8 from "@/components/b8/B8";
 
@@ -14,6 +15,9 @@ export default function Home() {
         <Tape angleInDeg={-35} reversed />
         <Tape className="translate-x-36" angleInDeg={-12} reversed />
         <p className="absolute bottom-12 text-lg">check back soon™ for new projects!</p>
+      </section>
+      <section className="h-lvh overflow-hidden w-full snap-center">
+        <Boids />
       </section>
     </main>
   );
