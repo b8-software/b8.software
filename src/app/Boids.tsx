@@ -16,8 +16,14 @@ type Boid = {
 
 const friction = 0.002;
 
+const baseSpeedMultiplier = 5;
+const centerSpeedMultiplier = 0.1;
+const alignmentSpeedMultiplier = 0.1;
+const randomSpeedMultiplier = 0.4;
+
 const headLen = 10; // length of head in pixels
-const globalArrowScale = 5;
+const globalArrowScale = 10 / baseSpeedMultiplier;
+const accelerationArrowScale = 100 / baseSpeedMultiplier;
 const arrowAngle = Math.PI / 6;
 
 function drawArrow(context: CanvasRenderingContext2D, origin: Vector2, direction: Vector2) {
@@ -129,13 +135,13 @@ function deltaWrapped(v1: Vector2, v2: Vector2, width: number, height: number): 
   const [x1, y1] = v1;
   const [x2, y2] = v2;
 
-  const dx = x2 - x1;
-  const dy = y2 - y1;
+  let dx = x2 - x1;
+  let dy = y2 - y1;
 
-  const wrappedDx = ((dx + width / 2) % width) - width / 2;
-  const wrappedDy = ((dy + height / 2) % height) - height / 2;
+  if (Math.abs(dx) > width / 2) dx -= Math.sign(dx) * width;
+  if (Math.abs(dy) > height / 2) dy -= Math.sign(dy) * height;
 
-  return [wrappedDx, wrappedDy];
+  return [dx, dy];
 }
 
 export default function Boids() {
@@ -145,6 +151,8 @@ export default function Boids() {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   const [boids, setBoids] = useState<Boid[]>([]);
+
+  const [isDebug, setIsDebug] = useState(false);
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
@@ -161,10 +169,12 @@ export default function Boids() {
       const [cx, cy] = getCenterOfBoids(boids, dimensions.width, dimensions.height);
       const avgVelocity = getAverageVelocityNormalizend(boids);
 
-      ctx.fillStyle = "#ff000088";
-      ctx.beginPath();
-      ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
-      ctx.fill();
+      if (isDebug) {
+        ctx.fillStyle = "#ff000088";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+        ctx.fill();
+      }
 
       // accelerate
       boids.forEach(boid => {
@@ -176,15 +186,17 @@ export default function Boids() {
 
         const distToCenter = Math.max(Math.hypot(dx, dy), 0.1);
 
-        boid.acceleration[0] += (dx / distToCenter) * 0.1 * (distToCenter < 40 ? -1 : 1);
-        boid.acceleration[1] += (dy / distToCenter) * 0.1 * (distToCenter < 40 ? -1 : 1);
+        boid.acceleration[0] +=
+          (dx / distToCenter) * (distToCenter < 40 ? -1 : 1) * centerSpeedMultiplier;
+        boid.acceleration[1] +=
+          (dy / distToCenter) * (distToCenter < 40 ? -1 : 1) * centerSpeedMultiplier;
 
         // align with average velocity
 
         const [avgX, avgY] = avgVelocity;
 
-        boid.acceleration[0] += avgX * 0.1;
-        boid.acceleration[1] += avgY * 0.1;
+        boid.acceleration[0] += avgX * alignmentSpeedMultiplier;
+        boid.acceleration[1] += avgY * alignmentSpeedMultiplier;
 
         // a little bit of random movement
 
@@ -195,8 +207,11 @@ export default function Boids() {
           boid.randomDirectionTimer = Math.random() * 30;
         }
 
-        boid.acceleration[0] += boid.randomDirection[0] * 0.1;
-        boid.acceleration[1] += boid.randomDirection[1] * 0.1;
+        boid.acceleration[0] += boid.randomDirection[0] * randomSpeedMultiplier;
+        boid.acceleration[1] += boid.randomDirection[1] * randomSpeedMultiplier;
+
+        boid.acceleration[0] *= baseSpeedMultiplier;
+        boid.acceleration[1] *= baseSpeedMultiplier;
       });
 
       boids.forEach(boid => {
@@ -222,17 +237,23 @@ export default function Boids() {
         ctx.arc(boid.position[0], boid.position[1], 5, 0, 2 * Math.PI);
         ctx.fill();
 
-        ctx.beginPath();
-        drawArrow(ctx, boid.position, boid.velocity);
-        ctx.stroke();
+        if (isDebug) {
+          ctx.beginPath();
+          drawArrow(ctx, boid.position, boid.velocity);
+          ctx.stroke();
 
-        ctx.strokeStyle = "red";
-        ctx.beginPath();
-        drawArrow(ctx, boid.position, boid.acceleration.map(v => v * 50) as Vector2);
-        ctx.stroke();
+          ctx.strokeStyle = "red";
+          ctx.beginPath();
+          drawArrow(
+            ctx,
+            boid.position,
+            boid.acceleration.map(v => v * accelerationArrowScale) as Vector2
+          );
+          ctx.stroke();
+        }
       });
     },
-    [boids, dimensions.height, dimensions.width]
+    [boids, dimensions.height, dimensions.width, isDebug]
   );
 
   const resize = () => {
@@ -293,5 +314,30 @@ export default function Boids() {
     return () => cancelAnimationFrame(animationId);
   }, [canvasRef, dimensions, draw]);
 
-  return <canvas ref={canvasRef} onClick={addBoid}></canvas>;
+  return (
+    <>
+      <canvas ref={canvasRef} onClick={addBoid}></canvas>
+      <button
+        data-active={isDebug ? "" : undefined}
+        className={`w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 absolute top-6 left-6 [&[data-active]]:bg-red-500/40 `}
+        onClick={() => setIsDebug(isDebug => !isDebug)}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="22" y1="12" x2="18" y2="12"></line>
+          <line x1="6" y1="12" x2="2" y2="12"></line>
+          <line x1="12" y1="6" x2="12" y2="2"></line>
+          <line x1="12" y1="22" x2="12" y2="18"></line>
+        </svg>
+      </button>
+    </>
+  );
 }
