@@ -10,6 +10,8 @@ type Boid = {
   position: Vector2;
   velocity: Vector2;
   acceleration: Vector2;
+  randomDirection: Vector2;
+  randomDirectionTimer: number;
 };
 
 const friction = 0.002;
@@ -69,8 +71,8 @@ const convertWrapped2dTo1d = (v: Vector2): number => {
   const len = Math.hypot(x, y);
 
   // to length 1
-  const nx = x / len;
-  const ny = y / len;
+  const nx = x / len || 0;
+  const ny = y / len || 0;
 
   const cosZ = Math.acos(nx) / (2 * Math.PI);
   const sinZ = Math.asin(ny) / (2 * Math.PI);
@@ -100,9 +102,27 @@ function getCenterOfBoids(boids: Boid[], width: number, height: number): Vector2
       },
       [0, 0, 0, 0]
     )
-    .map(v => v / boids.length) as Vector4;
+    .map(v => v / boids.length || 0) as Vector4;
 
   return convertWrapped4dTo2d(center4d, width, height);
+}
+
+function getAverageVelocityNormalizend(boids: Boid[]): Vector2 {
+  const avg = boids
+    .map(boid => boid.velocity)
+    .reduce(
+      (acc, v) => {
+        acc[0] += v[0];
+        acc[1] += v[1];
+        return acc;
+      },
+      [0, 0]
+    )
+    .map(v => v / boids.length) as Vector2;
+
+  const len = Math.hypot(...avg);
+
+  return avg.map(v => v / len || 0) as Vector2;
 }
 
 function deltaWrapped(v1: Vector2, v2: Vector2, width: number, height: number): Vector2 {
@@ -133,9 +153,13 @@ export default function Boids() {
 
       if (delta === 0) return;
 
+      if (boids.length === 0) return;
+      // else console.log(boids);
+
       ctx.clearRect(0, 0, dimensions.width, dimensions.height);
 
       const [cx, cy] = getCenterOfBoids(boids, dimensions.width, dimensions.height);
+      const avgVelocity = getAverageVelocityNormalizend(boids);
 
       ctx.fillStyle = "#ff000088";
       ctx.beginPath();
@@ -144,12 +168,35 @@ export default function Boids() {
 
       // accelerate
       boids.forEach(boid => {
+        boid.acceleration[0] = 0;
+        boid.acceleration[1] = 0;
+
+        // steer towards center
         const [dx, dy] = deltaWrapped(boid.position, [cx, cy], dimensions.width, dimensions.height);
 
         const distToCenter = Math.max(Math.hypot(dx, dy), 0.1);
 
-        boid.acceleration[0] = (dx / distToCenter) * 0.1 * (distToCenter < 40 ? -1 : 1);
-        boid.acceleration[1] = (dy / distToCenter) * 0.1 * (distToCenter < 40 ? -1 : 1);
+        boid.acceleration[0] += (dx / distToCenter) * 0.1 * (distToCenter < 40 ? -1 : 1);
+        boid.acceleration[1] += (dy / distToCenter) * 0.1 * (distToCenter < 40 ? -1 : 1);
+
+        // align with average velocity
+
+        const [avgX, avgY] = avgVelocity;
+
+        boid.acceleration[0] += avgX * 0.1;
+        boid.acceleration[1] += avgY * 0.1;
+
+        // a little bit of random movement
+
+        boid.randomDirectionTimer -= delta;
+        if (boid.randomDirectionTimer < 0) {
+          boid.randomDirection[0] = Math.random() - 0.5;
+          boid.randomDirection[1] = Math.random() - 0.5;
+          boid.randomDirectionTimer = Math.random() * 30;
+        }
+
+        boid.acceleration[0] += boid.randomDirection[0] * 0.1;
+        boid.acceleration[1] += boid.randomDirection[1] * 0.1;
       });
 
       boids.forEach(boid => {
@@ -212,7 +259,9 @@ export default function Boids() {
       {
         position: [x, y],
         velocity: [0, 0],
-        acceleration: [1, 0],
+        acceleration: [0, 0],
+        randomDirection: [0, 0],
+        randomDirectionTimer: 0,
       },
     ]);
   };
