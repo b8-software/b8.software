@@ -64,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </svg>
           </a>
           <a
-            href="mailto:hello@b8.software"
+            href="mailto:daniel@b8.software"
             className="w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0"
             title="mail"
           >

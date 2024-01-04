@@ -12,7 +12,6 @@ type Boid = {
   acceleration: Vector2;
   randomDirection: Vector2;
   randomDirectionTimer: number;
-  icon: number;
   size: number;
 };
 
@@ -51,6 +50,10 @@ const animalIcons = [
 ];
 
 const unicodeIcons = [
+  "❄",
+  "❅",
+  "❇",
+  "❈",
   "★",
   "✯",
   "✭",
@@ -63,6 +66,7 @@ const unicodeIcons = [
   "✣",
   "✤",
   "✥",
+  "❖",
   "✦",
   "✧",
   "✵",
@@ -234,14 +238,42 @@ function deltaWrapped(v1: Vector2, v2: Vector2, width: number, height: number): 
   return [dx, dy];
 }
 
+function createBoid(
+  position:
+    | {
+        width: number;
+        height: number;
+      }
+    | {
+        x: number;
+        y: number;
+      }
+): Boid {
+  const positionVector: Vector2 =
+    "width" in position
+      ? [Math.random() * position.width, Math.random() * position.height]
+      : [position.x, position.y];
+
+  return {
+    position: positionVector,
+    velocity: [0, 0],
+    acceleration: [0, 0],
+    randomDirection: [0, 0],
+    randomDirectionTimer: 0,
+    size: getRandomSize(),
+  };
+}
+
 export default function Boids() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const lastTime = useRef<number>(-1);
 
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [dimensions, setDimensions] = useState({ width: 1920, height: 1080 });
 
-  const [boids, setBoids] = useState<Boid[]>([]);
+  const [boids, setBoids] = useState<Boid[]>(
+    Array.from({ length: 15 }, () => createBoid(dimensions))
+  );
 
   const [isDebug, setIsDebug] = useState(false);
   const [isEmojis, setIsEmojis] = useState(false);
@@ -320,7 +352,7 @@ export default function Boids() {
         boid.acceleration[1] *= baseSpeedMultiplier;
       });
 
-      boids.forEach(boid => {
+      boids.forEach((boid, icon) => {
         const speed = Math.hypot(...boid.velocity);
 
         // limit velocity with friction
@@ -344,14 +376,10 @@ export default function Boids() {
 
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.font = `${boid.size}px serif`;
+        ctx.font = `${boid.size}px twemoji serif`;
+
         const icons = isEmojis ? animalIcons : unicodeIcons;
-        ctx.fillText(
-          icons[boid.icon % icons.length],
-          boid.position[0],
-          boid.position[1],
-          boid.size * 2
-        );
+        ctx.fillText(icons[icon % icons.length], boid.position[0], boid.position[1], boid.size * 2);
 
         if (isDebug) {
           ctx.strokeStyle = colors.velocity;
@@ -404,15 +432,10 @@ export default function Boids() {
 
     setBoids(boids => [
       ...boids,
-      {
-        position: [x, y],
-        velocity: [0, 0],
-        acceleration: [0, 0],
-        randomDirection: [0, 0],
-        randomDirectionTimer: 0,
-        size: getRandomSize(),
-        icon: boids.length,
-      },
+      createBoid({
+        x,
+        y,
+      }),
     ]);
   };
 
@@ -472,10 +495,7 @@ export default function Boids() {
         <button
           aria-pressed={isEmojis}
           className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-pressed:bg-blue-500/40 aria-pressed:text-blue-500"
-          onClick={e => {
-            if (!e.shiftKey && !isEmojis) setBoids(boids.slice(0, 10));
-            setIsEmojis(isEmojis => !isEmojis);
-          }}
+          onClick={() => setIsEmojis(isEmojis => !isEmojis)}
           title="toggle emojis"
         >
           <svg
