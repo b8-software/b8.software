@@ -448,9 +448,10 @@ export default function Boids() {
       <canvas ref={canvasRef} onClick={addBoid}></canvas>
       <div className="absolute top-6 left-6 gap-2 flex flex-col w-max">
         <button
-          data-active={isDebug ? "" : undefined}
-          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 [&[data-active]]:bg-red-500/40"
+          aria-pressed={isDebug}
+          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-pressed:bg-red-500/40 aria-pressed:text-red-500"
           onClick={() => setIsDebug(isDebug => !isDebug)}
+          title="toggle debug info"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -469,9 +470,13 @@ export default function Boids() {
           </svg>
         </button>
         <button
-          data-active={isEmojis ? "" : undefined}
-          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 [&[data-active]]:bg-blue-500/40"
-          onClick={() => setIsEmojis(isEmojis => !isEmojis)}
+          aria-pressed={isEmojis}
+          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-pressed:bg-blue-500/40 aria-pressed:text-blue-500"
+          onClick={e => {
+            if (!e.shiftKey && !isEmojis) setBoids(boids.slice(0, 10));
+            setIsEmojis(isEmojis => !isEmojis);
+          }}
+          title="toggle emojis"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -483,6 +488,24 @@ export default function Boids() {
             strokeLinejoin="round"
           >
             <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+          </svg>
+        </button>
+        <button
+          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-checked:bg-greenest-500/40"
+          onClick={() => setBoids(boids => boids.slice(0, Math.ceil(boids.length / 2)))}
+          title="remove half of the boids"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
           </svg>
         </button>
       </div>
