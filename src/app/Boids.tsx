@@ -12,19 +12,109 @@ type Boid = {
   acceleration: Vector2;
   randomDirection: Vector2;
   randomDirectionTimer: number;
+  icon: number;
+  size: number;
 };
 
-const friction = 0.002;
+const animalIcons = [
+  "🐦",
+  "🦅",
+  "🦉",
+  "🦆",
+  "🦢",
+  "🦜",
+  "🦚",
+  "🦩",
+  "🦤",
+  "🦥",
+  "🐸",
+  "🐊",
+  "🐢",
+  "🐲",
+  "🐉",
+  "🦕",
+  "🦖",
+  "🐳",
+  "🐋",
+  "🐬",
+  "🐟",
+  "🐠",
+  "🐡",
+  "🐙",
+  "🦋",
+  "🐝",
+  "🐞",
+  "🦀",
+  "🦞",
+  "🦐",
+  "🦑",
+];
+
+const unicodeIcons = [
+  "★",
+  "✯",
+  "✭",
+  "✩",
+  "✫",
+  "✬",
+  "✭",
+  "✮",
+  "✢",
+  "✣",
+  "✤",
+  "✥",
+  "✦",
+  "✧",
+  "✵",
+  "❊",
+  "✱",
+  "✲",
+  "✻",
+  "✼",
+  "❃",
+  "❉",
+  "✺",
+  "✪",
+  "❂",
+];
+
+type ColorTheme<T extends string> = {
+  dark: Record<T, string>;
+  light: Record<T, string>;
+};
+
+const colorTheme: ColorTheme<"boid" | "velocity" | "accelleration" | "center"> = {
+  dark: {
+    boid: "rgb(228, 228, 231)",
+    velocity: "rgb(228, 228, 231)",
+    accelleration: "#2bfda5",
+    center: "#ff000088",
+  },
+  light: {
+    boid: "#000000",
+    velocity: "#000000",
+    accelleration: "#009657",
+    center: "#000000",
+  },
+};
 
 const baseSpeedMultiplier = 5;
 const centerSpeedMultiplier = 0.1;
 const alignmentSpeedMultiplier = 0.1;
 const randomSpeedMultiplier = 0.4;
 
+const friction = 0.002;
+
 const headLen = 10; // length of head in pixels
 const globalArrowScale = 10 / baseSpeedMultiplier;
 const accelerationArrowScale = 100 / baseSpeedMultiplier;
 const arrowAngle = Math.PI / 6;
+
+function getRandomSize() {
+  // min: 20, max: 60
+
+  return Math.floor(Math.random() * 40 + 20);
+}
 
 function drawArrow(context: CanvasRenderingContext2D, origin: Vector2, direction: Vector2) {
   const [fromX, fromY] = origin;
@@ -84,7 +174,7 @@ const convertWrapped2dTo1d = (v: Vector2): number => {
   const sinZ = Math.asin(ny) / (2 * Math.PI);
 
   const possibleCosZ = [cosZ, 1 - cosZ];
-  const possibleSinZ = [sinZ, 1 + sinZ, 0.5 - sinZ].filter(v => v >= 0 && v <= 1);
+  const possibleSinZ = sinZ < 0 ? [1 + sinZ, 0.5 - sinZ] : [sinZ, 0.5 - sinZ];
 
   const result = possibleCosZ
     .map(cosZ => possibleSinZ.map(sinZ => [cosZ, sinZ]))
@@ -146,6 +236,7 @@ function deltaWrapped(v1: Vector2, v2: Vector2, width: number, height: number): 
 
 export default function Boids() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const lastTime = useRef<number>(-1);
 
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -153,10 +244,25 @@ export default function Boids() {
   const [boids, setBoids] = useState<Boid[]>([]);
 
   const [isDebug, setIsDebug] = useState(false);
+  const [isEmojis, setIsEmojis] = useState(false);
+
+  const [colors, setColors] = useState<(typeof colorTheme)["dark" | "light"]>(colorTheme.dark);
+
+  useEffect(() => {
+    const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const updateColor = (query: MediaQueryListEvent | MediaQueryList) => {
+      console.log(query);
+      setColors(query.matches ? colorTheme.dark : colorTheme.light);
+    };
+
+    darkQuery.addEventListener("change", updateColor);
+    return () => darkQuery.removeEventListener("change", updateColor);
+  }, []);
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, time: number) => {
-      const delta = (lastTime.current !== -1 ? time - lastTime.current : 0) / 60;
+      const delta = Math.min((lastTime.current !== -1 ? time - lastTime.current : 0) / 60, 5); // prevent large delta when tab is inactive
       lastTime.current = time;
 
       if (delta === 0) return;
@@ -170,7 +276,7 @@ export default function Boids() {
       const avgVelocity = getAverageVelocityNormalizend(boids);
 
       if (isDebug) {
-        ctx.fillStyle = "#ff000088";
+        ctx.fillStyle = colors.center;
         ctx.beginPath();
         ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
         ctx.fill();
@@ -218,8 +324,10 @@ export default function Boids() {
         const speed = Math.hypot(...boid.velocity);
 
         // limit velocity with friction
-        boid.velocity[0] += (boid.acceleration[0] - boid.velocity[0] * speed * friction) * delta;
-        boid.velocity[1] += (boid.acceleration[1] - boid.velocity[1] * speed * friction) * delta;
+        boid.velocity[0] +=
+          (boid.acceleration[0] - boid.velocity[0] * speed * friction * (boid.size / 40)) * delta;
+        boid.velocity[1] +=
+          (boid.acceleration[1] - boid.velocity[1] * speed * friction * (boid.size / 40)) * delta;
 
         // move
         boid.position[0] += boid.velocity[0] * delta;
@@ -230,19 +338,28 @@ export default function Boids() {
         boid.position[1] = (boid.position[1] + dimensions.height) % dimensions.height;
 
         // draw
-        ctx.fillStyle = "currentColor";
-        ctx.strokeStyle = "currentColor";
+        ctx.fillStyle = colors.boid;
+        ctx.strokeStyle = colors.boid;
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(boid.position[0], boid.position[1], 5, 0, 2 * Math.PI);
-        ctx.fill();
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = `${boid.size}px serif`;
+        const icons = isEmojis ? animalIcons : unicodeIcons;
+        ctx.fillText(
+          icons[boid.icon % icons.length],
+          boid.position[0],
+          boid.position[1],
+          boid.size * 2
+        );
 
         if (isDebug) {
+          ctx.strokeStyle = colors.velocity;
           ctx.beginPath();
           drawArrow(ctx, boid.position, boid.velocity);
           ctx.stroke();
 
-          ctx.strokeStyle = "red";
+          ctx.strokeStyle = colors.accelleration;
           ctx.beginPath();
           drawArrow(
             ctx,
@@ -253,7 +370,17 @@ export default function Boids() {
         }
       });
     },
-    [boids, dimensions.height, dimensions.width, isDebug]
+    [
+      boids,
+      colors.accelleration,
+      colors.boid,
+      colors.center,
+      colors.velocity,
+      dimensions.height,
+      dimensions.width,
+      isDebug,
+      isEmojis,
+    ]
   );
 
   const resize = () => {
@@ -283,6 +410,8 @@ export default function Boids() {
         acceleration: [0, 0],
         randomDirection: [0, 0],
         randomDirectionTimer: 0,
+        size: getRandomSize(),
+        icon: boids.length,
       },
     ]);
   };
@@ -317,27 +446,46 @@ export default function Boids() {
   return (
     <>
       <canvas ref={canvasRef} onClick={addBoid}></canvas>
-      <button
-        data-active={isDebug ? "" : undefined}
-        className={`w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 absolute top-6 left-6 [&[data-active]]:bg-red-500/40 `}
-        onClick={() => setIsDebug(isDebug => !isDebug)}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      <div className="absolute top-6 left-6 gap-2 flex flex-col w-max">
+        <button
+          data-active={isDebug ? "" : undefined}
+          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 [&[data-active]]:bg-red-500/40"
+          onClick={() => setIsDebug(isDebug => !isDebug)}
         >
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="22" y1="12" x2="18" y2="12"></line>
-          <line x1="6" y1="12" x2="2" y2="12"></line>
-          <line x1="12" y1="6" x2="12" y2="2"></line>
-          <line x1="12" y1="22" x2="12" y2="18"></line>
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="22" y1="12" x2="18" y2="12"></line>
+            <line x1="6" y1="12" x2="2" y2="12"></line>
+            <line x1="12" y1="6" x2="12" y2="2"></line>
+            <line x1="12" y1="22" x2="12" y2="18"></line>
+          </svg>
+        </button>
+        <button
+          data-active={isEmojis ? "" : undefined}
+          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 [&[data-active]]:bg-blue-500/40"
+          onClick={() => setIsEmojis(isEmojis => !isEmojis)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+          </svg>
+        </button>
+      </div>
     </>
   );
 }
