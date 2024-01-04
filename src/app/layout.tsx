@@ -20,14 +20,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         }
       >
         {children}
-        <footer className="snap-end flex items-center w-full justify-center gap-2 p-6 overflow-hidden">
+        <footer className="fixed bottom-4 flex items-center left-1/2 -translate-x-1/2 justify-center gap-2 p-2 border rounded-3xl overflow-hidden dark:bg-zinc-950">
           <div className="overflow-clip rounded-full shrink-0">
             <Image
               src="https://avatars.githubusercontent.com/u/71148001?v=4"
               width={48}
               height={48}
               alt="oxymoron profile"
-              className="scale-105 rounded-full"
+              className="scale-105 rounded-full p-2"
             />
           </div>
 
@@ -64,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </svg>
           </a>
           <a
-            href="mailto:hello@b8.software"
+            href="mailto:daniel@b8.software"
             className="w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0"
             title="mail"
           >
