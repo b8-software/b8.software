@@ -13,3 +13,7 @@ body {
     stroke-linejoin: round;
   }
 }
+
+:root {
+  color-scheme: light dark;
+}

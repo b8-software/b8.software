@@ -1,8 +1,20 @@
 "use client";
 
-export default function FirefoxPerformanceWarning() {
-  if (typeof window === "undefined") return null;
-  if (!window.navigator.userAgent.includes("Firefox")) return null;
+import { useEffect, useState } from "react";
 
-  return <>⚠️ enabling emojis might cause performance issues in Firefox</>;
+export default function FirefoxPerformanceWarning() {
+  const [hasWarning, setHasWarning] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isFirefox = window.navigator.userAgent.includes("Firefox");
+    const isWindows = window.navigator.userAgent.includes("Windows");
+
+    setHasWarning(isFirefox && isWindows);
+  }, []);
+
+  return hasWarning ? (
+    <>⚠️ enabling emojis with a large amount of objects might cause performance issues</>
+  ) : null;
 }

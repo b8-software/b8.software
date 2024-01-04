@@ -50,9 +50,7 @@ const animalIcons = [
 ];
 
 const unicodeIcons = [
-  "❄",
   "❅",
-  "❇",
   "❈",
   "★",
   "✯",
