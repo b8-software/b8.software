@@ -263,7 +263,7 @@ function createBoid(
 }
 
 export default function Boids() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const contextRef = useRef<CanvasRenderingContext2D | null>(null);
 
   const lastTime = useRef<number>(-1);
 
@@ -284,7 +284,6 @@ export default function Boids() {
     const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const updateColor = (query: MediaQueryListEvent | MediaQueryList) => {
-      console.log(query);
       setColors(query.matches ? colorTheme.dark : colorTheme.light);
     };
 
@@ -294,7 +293,10 @@ export default function Boids() {
   }, []);
 
   const draw = useCallback(
-    (ctx: CanvasRenderingContext2D, time: number, noMovement: boolean = false) => {
+    (time: number, noMovement: boolean = false) => {
+      const ctx = contextRef.current;
+      if (!ctx) return;
+
       let delta = 0;
       if (!noMovement) {
         delta = (lastTime.current !== -1 ? time - lastTime.current : 0) / 60;
@@ -313,7 +315,6 @@ export default function Boids() {
           ctx.putImageData(imageData, 0, 0);
         }
       } else {
-        console.log("clear");
         ctx.clearRect(0, 0, dimensions.width, dimensions.height);
       }
 
@@ -427,7 +428,7 @@ export default function Boids() {
   );
 
   const resize = () => {
-    const canvas = canvasRef.current;
+    const canvas = contextRef.current?.canvas;
     if (!canvas) return;
 
     const { width, height } = canvas.parentElement!.getBoundingClientRect();
@@ -437,7 +438,7 @@ export default function Boids() {
   const addBoid: MouseEventHandler<HTMLCanvasElement> = e => {
     e.preventDefault();
 
-    const canvas = canvasRef.current;
+    const canvas = contextRef.current?.canvas;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
@@ -455,10 +456,7 @@ export default function Boids() {
   };
 
   useEffect(() => {
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
-
-    draw(ctx, 0, true);
+    draw(0, true);
   }, [boids, draw]);
 
   useEffect(() => {
@@ -468,33 +466,37 @@ export default function Boids() {
   }, []);
 
   useEffect(() => {
-    if (isPaused) return;
-
-    const canvas = canvasRef.current;
+    const canvas = contextRef.current?.canvas;
     if (!canvas) return;
 
     canvas.width = dimensions.width;
     canvas.height = dimensions.height;
+  }, [dimensions.height, dimensions.width]);
+
+  useEffect(() => {
+    if (isPaused) return;
 
     lastTime.current = -1;
-
-    const ctx = canvas?.getContext("2d");
-    if (!ctx) return;
 
     let animationId = 0;
 
     const drawWithCtx: FrameRequestCallback = time => {
-      draw(ctx, time);
+      draw(time);
       animationId = requestAnimationFrame(drawWithCtx);
     };
     animationId = requestAnimationFrame(drawWithCtx);
 
     return () => cancelAnimationFrame(animationId);
-  }, [canvasRef, dimensions, draw, isPaused]);
+  }, [contextRef, dimensions, draw, isPaused]);
 
   return (
     <>
-      <canvas ref={canvasRef} onClick={addBoid}></canvas>
+      <canvas
+        ref={canvasRef => {
+          contextRef.current = canvasRef?.getContext("2d") ?? null;
+        }}
+        onClick={addBoid}
+      ></canvas>
       <div className="absolute top-6 left-6 gap-2 flex flex-col w-max">
         <button
           aria-pressed={isTrailEnabled}
