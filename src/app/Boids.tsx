@@ -275,6 +275,8 @@ export default function Boids() {
 
   const [isDebug, setIsDebug] = useState(false);
   const [isEmojis, setIsEmojis] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isTrailEnabled, setIsTrailEnabled] = useState(false);
 
   const [colors, setColors] = useState<(typeof colorTheme)["dark" | "light"]>(colorTheme.dark);
 
@@ -291,11 +293,13 @@ export default function Boids() {
   }, []);
 
   const draw = useCallback(
-    (ctx: CanvasRenderingContext2D, time: number) => {
-      const delta = Math.min((lastTime.current !== -1 ? time - lastTime.current : 0) / 60, 5); // prevent large delta when tab is inactive
-      lastTime.current = time;
-
-      if (delta === 0) return;
+    (ctx: CanvasRenderingContext2D, time: number, noMovement: boolean = false) => {
+      let delta = 0;
+      if (!noMovement) {
+        delta = (lastTime.current !== -1 ? time - lastTime.current : 0) / 60;
+        delta = Math.min(delta, 5); // prevent large delta when tab is inactive
+        lastTime.current = time;
+      }
 
       if (boids.length === 0) return;
       // else console.log(boids);
@@ -348,9 +352,8 @@ export default function Boids() {
 
         boid.acceleration[0] *= baseSpeedMultiplier;
         boid.acceleration[1] *= baseSpeedMultiplier;
-      });
 
-      boids.forEach((boid, icon) => {
+        // accelerate
         const speed = Math.hypot(...boid.velocity);
 
         // limit velocity with friction
@@ -366,8 +369,10 @@ export default function Boids() {
         // wrap around
         boid.position[0] = (boid.position[0] + dimensions.width) % dimensions.width;
         boid.position[1] = (boid.position[1] + dimensions.height) % dimensions.height;
+      });
 
-        // draw
+      // draw!
+      boids.forEach((boid, icon) => {
         ctx.fillStyle = colors.boid;
         ctx.strokeStyle = colors.boid;
         ctx.lineWidth = 2;
@@ -438,17 +443,28 @@ export default function Boids() {
   };
 
   useEffect(() => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+
+    draw(ctx, 0, true);
+  }, [boids, draw]);
+
+  useEffect(() => {
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
 
   useEffect(() => {
+    if (isPaused) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     canvas.width = dimensions.width;
     canvas.height = dimensions.height;
+
+    lastTime.current = -1;
 
     const ctx = canvas?.getContext("2d");
     if (!ctx) return;
@@ -462,7 +478,7 @@ export default function Boids() {
     animationId = requestAnimationFrame(drawWithCtx);
 
     return () => cancelAnimationFrame(animationId);
-  }, [canvasRef, dimensions, draw]);
+  }, [canvasRef, dimensions, draw, isPaused]);
 
   return (
     <>
@@ -483,11 +499,16 @@ export default function Boids() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="22" y1="12" x2="18" y2="12"></line>
-            <line x1="6" y1="12" x2="2" y2="12"></line>
-            <line x1="12" y1="6" x2="12" y2="2"></line>
-            <line x1="12" y1="22" x2="12" y2="18"></line>
+            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <line x1="9" y1="1" x2="9" y2="4"></line>
+            <line x1="15" y1="1" x2="15" y2="4"></line>
+            <line x1="9" y1="20" x2="9" y2="23"></line>
+            <line x1="15" y1="20" x2="15" y2="23"></line>
+            <line x1="20" y1="9" x2="23" y2="9"></line>
+            <line x1="20" y1="14" x2="23" y2="14"></line>
+            <line x1="1" y1="9" x2="4" y2="9"></line>
+            <line x1="1" y1="14" x2="4" y2="14"></line>
           </svg>
         </button>
         <button
@@ -509,6 +530,26 @@ export default function Boids() {
           </svg>
         </button>
         <button
+          aria-pressed={isPaused}
+          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-pressed:bg-orange-500/40 aria-pressed:text-orange-500"
+          onClick={() => setIsPaused(isPaused => !isPaused)}
+          title="pause"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="10" y1="15" x2="10" y2="9"></line>
+            <line x1="14" y1="15" x2="14" y2="9"></line>
+          </svg>
+        </button>
+        <button
           className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-checked:bg-greenest-500/40"
           onClick={() => setBoids(boids => boids.slice(0, Math.ceil(boids.length / 2)))}
           title="remove half of the boids"
@@ -522,8 +563,10 @@ export default function Boids() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="8" y1="12" x2="16" y2="12"></line>
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
           </svg>
         </button>
       </div>
