@@ -288,6 +288,7 @@ export default function Boids() {
       setColors(query.matches ? colorTheme.dark : colorTheme.light);
     };
 
+    updateColor(darkQuery);
     darkQuery.addEventListener("change", updateColor);
     return () => darkQuery.removeEventListener("change", updateColor);
   }, []);
@@ -302,9 +303,19 @@ export default function Boids() {
       }
 
       if (boids.length === 0) return;
-      // else console.log(boids);
 
-      ctx.clearRect(0, 0, dimensions.width, dimensions.height);
+      if (isTrailEnabled) {
+        if (!noMovement) {
+          const imageData = ctx.getImageData(0, 0, dimensions.width, dimensions.height);
+          for (let i = 3; i < imageData.data.length; i += 4) {
+            imageData.data[i] -= 20 * delta;
+          }
+          ctx.putImageData(imageData, 0, 0);
+        }
+      } else {
+        console.log("clear");
+        ctx.clearRect(0, 0, dimensions.width, dimensions.height);
+      }
 
       const [cx, cy] = getCenterOfBoids(boids, dimensions.width, dimensions.height);
       const avgVelocity = getAverageVelocityNormalizend(boids);
@@ -371,7 +382,7 @@ export default function Boids() {
         boid.position[1] = (boid.position[1] + dimensions.height) % dimensions.height;
       });
 
-      // draw!
+      // draw
       boids.forEach((boid, icon) => {
         ctx.fillStyle = colors.boid;
         ctx.strokeStyle = colors.boid;
@@ -411,6 +422,7 @@ export default function Boids() {
       dimensions.width,
       isDebug,
       isEmojis,
+      isTrailEnabled,
     ]
   );
 
@@ -485,9 +497,27 @@ export default function Boids() {
       <canvas ref={canvasRef} onClick={addBoid}></canvas>
       <div className="absolute top-6 left-6 gap-2 flex flex-col w-max">
         <button
+          aria-pressed={isTrailEnabled}
+          className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-pressed:bg-yellow-500/40 aria-pressed:text-yellow-500"
+          onClick={() => setIsTrailEnabled(enabled => !enabled)}
+          title="toggle trails"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path>
+          </svg>
+        </button>
+        <button
           aria-pressed={isDebug}
           className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-pressed:bg-red-500/40 aria-pressed:text-red-500"
-          onClick={() => setIsDebug(isDebug => !isDebug)}
+          onClick={() => setIsDebug(enabled => !enabled)}
           title="toggle debug info"
         >
           <svg
@@ -514,7 +544,7 @@ export default function Boids() {
         <button
           aria-pressed={isEmojis}
           className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-pressed:bg-blue-500/40 aria-pressed:text-blue-500"
-          onClick={() => setIsEmojis(isEmojis => !isEmojis)}
+          onClick={() => setIsEmojis(enabled => !enabled)}
           title="toggle emojis"
         >
           <svg
@@ -532,7 +562,7 @@ export default function Boids() {
         <button
           aria-pressed={isPaused}
           className="w-12 p-2 h-max rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0 aria-pressed:bg-orange-500/40 aria-pressed:text-orange-500"
-          onClick={() => setIsPaused(isPaused => !isPaused)}
+          onClick={() => setIsPaused(enabled => !enabled)}
           title="pause"
         >
           <svg

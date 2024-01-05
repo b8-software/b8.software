@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         }
       >
         {children}
-        <footer className="fixed bottom-4 min-w-max flex items-center left-1/2 -translate-x-1/2 justify-center gap-2 p-2 border rounded-3xl overflow-hidden dark:bg-zinc-950">
+        <footer className="fixed bottom-4 min-w-max flex items-center left-1/2 -translate-x-1/2 justify-center gap-2 p-2 border border-current rounded-3xl overflow-hidden bg-zinc-200 dark:bg-zinc-950">
           <div className="overflow-clip rounded-full shrink-0">
             <Image
               src="https://avatars.githubusercontent.com/u/71148001?v=4"
