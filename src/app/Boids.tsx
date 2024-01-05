@@ -293,12 +293,12 @@ export default function Boids() {
   }, []);
 
   const draw = useCallback(
-    (time: number, noMovement: boolean = false) => {
+    (time: number | false) => {
       const ctx = contextRef.current;
       if (!ctx) return;
 
       let delta = 0;
-      if (!noMovement) {
+      if (time) {
         delta = (lastTime.current !== -1 ? time - lastTime.current : 0) / 60;
         delta = Math.min(delta, 5); // prevent large delta when tab is inactive
         lastTime.current = time;
@@ -306,15 +306,13 @@ export default function Boids() {
 
       if (boids.length === 0) return;
 
-      if (isTrailEnabled) {
-        if (!noMovement) {
-          const imageData = ctx.getImageData(0, 0, dimensions.width, dimensions.height);
-          for (let i = 3; i < imageData.data.length; i += 4) {
-            imageData.data[i] -= 20 * delta;
-          }
-          ctx.putImageData(imageData, 0, 0);
+      if (isTrailEnabled && time) {
+        const imageData = ctx.getImageData(0, 0, dimensions.width, dimensions.height);
+        for (let i = 3; i < imageData.data.length; i += 4) {
+          imageData.data[i] -= 30 * delta;
         }
-      } else {
+        ctx.putImageData(imageData, 0, 0);
+      } else if (!isTrailEnabled) {
         ctx.clearRect(0, 0, dimensions.width, dimensions.height);
       }
 
@@ -456,8 +454,8 @@ export default function Boids() {
   };
 
   useEffect(() => {
-    draw(0, true);
-  }, [boids, draw]);
+    if (isPaused) draw(false);
+  }, [boids, draw, isPaused, dimensions.width, dimensions.height]);
 
   useEffect(() => {
     resize();
