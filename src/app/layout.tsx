@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </svg>
           </a>
           <a
-            href="https://github.com/blxckOxymoron"
+            href="https://github.com/b8daniel"
             className="w-12 h-max p-2 rounded-full hover:bg-zinc-300 dark:hover:bg-zinc-800 transition-colors shrink-0"
             title="github"
           >
